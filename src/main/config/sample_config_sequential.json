@@ -3,7 +3,7 @@
   "ignoredUrls": ["https://blog.udacity.com/.*"],
   "ignoredWords": ["^.{1,3}$"],
   "implementationOverride": "com.udacity.webcrawler.SequentialWebCrawler",
-  "maxDepth": 10,
+  "maxDepth": 2,
   "timeoutSeconds": 5,
   "popularWordCount": 5
 }

@@ -5,7 +5,6 @@ import com.udacity.webcrawler.parser.PageParser;
 import com.udacity.webcrawler.parser.PageParserFactory;
 
 import javax.inject.Inject;
-import javax.inject.Provider;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -14,6 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RecursiveTask;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -25,6 +25,7 @@ final class ParallelWebCrawler implements WebCrawler {
   private final Duration timeout;
   private final int popularWordCount;
   private final ForkJoinPool pool;
+  private final List<Pattern> ignoreUrls;
 
   private final PageParserFactory parserFactory;
 
@@ -42,6 +43,7 @@ final class ParallelWebCrawler implements WebCrawler {
       @PopularWordCount int popularWordCount,
       @TargetParallelism int threadCount,
       @MaxDepth int maxDepth,
+      @IgnoredUrls List<Pattern> ignoreUrls,
       PageParserFactory parserFactory
       ) {
     this.clock = clock;
@@ -50,6 +52,7 @@ final class ParallelWebCrawler implements WebCrawler {
     this.pool = new ForkJoinPool(Math.min(threadCount, getMaxParallelism()));
     this.parserFactory = parserFactory;
     this.maxDepth = maxDepth;
+    this.ignoreUrls = ignoreUrls;
   }
 
   @Override
@@ -58,7 +61,7 @@ final class ParallelWebCrawler implements WebCrawler {
 
     // Build and return the crawl result
     return new CrawlResult.Builder()
-            .setWordCounts(wordCounts)
+            .setWordCounts(WordCounts.sort(wordCounts,popularWordCount))
             .setUrlsVisited(visitedUrls.size())
             .build();
   }
@@ -71,14 +74,14 @@ final class ParallelWebCrawler implements WebCrawler {
     private final List<String> urls;
     private final int depth;
 
-    public CrawlTask(List<String> urls, int depth) {
+    public CrawlTask(List<String> urls ,int depth) {
       this.urls = urls;
       this.depth = depth;
     }
 
     @Override
     protected Void compute() {
-      // Check if we've reached the maximum depth or if we've exceeded the timeout
+      // check if reached the maximum depth or if exceeded the timeout
       if (depth >= maxDepth || clock.instant().isAfter(clock.instant().plus(timeout))) {
         return null; // Stop crawling
       }
@@ -86,6 +89,11 @@ final class ParallelWebCrawler implements WebCrawler {
       List<CrawlTask> subtasks = new ArrayList<>();
 
       for (String url : urls) {
+        // Check if the URL matches any of the patterns in the ignoreUrls list
+        boolean shouldIgnore = ignoreUrls.stream().anyMatch(pattern -> pattern.matcher(url).matches());
+        if (shouldIgnore) {
+          continue;
+        }
         if (visitedUrls.add(url)) { // Only visit if not already visited
           try {
             PageParser.Result result = parserFactory.get(url).parse();
@@ -100,12 +108,11 @@ final class ParallelWebCrawler implements WebCrawler {
               subtasks.add(new CrawlTask(result.getLinks(), depth + 1));
             }
           } catch (Exception e) {
-            // Log the exception (could be an HTTP error, etc.)
+            // Log the exception (could be an HTTP error.)
             System.err.println("Error crawling URL " + url + ": " + e.getMessage());
           }
         }
       }
-
       // Execute all subtasks in parallel
       invokeAll(subtasks);
       return null;
