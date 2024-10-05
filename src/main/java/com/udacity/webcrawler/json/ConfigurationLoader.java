@@ -32,11 +32,20 @@ public final class ConfigurationLoader {
    */
   public CrawlerConfiguration load() {
     // TODO: Fill in this method.
+      Reader reader = null;
       try {
-          Reader reader = new FileReader(String.valueOf(path));
+          reader = new FileReader(String.valueOf(path));
           return read(reader);
       } catch (FileNotFoundException e) {
           throw new RuntimeException(e);
+      }finally {
+          if (reader != null){
+              try {
+                  reader.close();
+              }catch (IOException e){
+                  e.printStackTrace();
+              }
+          }
       }
 //      return new CrawlerConfiguration.Builder().build();
   }

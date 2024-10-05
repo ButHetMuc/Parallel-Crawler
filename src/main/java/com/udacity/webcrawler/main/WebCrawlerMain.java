@@ -49,10 +49,10 @@ public final class WebCrawlerMain {
     String profileDataPath = config.getProfileOutputPath();
     if(!profileDataPath.isEmpty()){
       Path pathProfile = Path.of(profileDataPath);
-      resultWriter.write(pathProfile);
+      profiler.writeData(pathProfile);
     }else {
       Writer profileWriter = new OutputStreamWriter(System.out);
-      resultWriter.write(profileWriter);
+      profiler.writeData(profileWriter);
     }
   }
 
