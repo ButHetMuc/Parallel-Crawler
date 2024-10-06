@@ -1,6 +1,7 @@
 package com.udacity.webcrawler.json;
 
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 
@@ -59,6 +60,7 @@ public final class CrawlResultWriter {
     // TODO: Fill in this method.
     ObjectMapper mapper = new ObjectMapper();
     mapper.disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET);
+    mapper.disable(JsonParser.Feature.AUTO_CLOSE_SOURCE);
       try {
           mapper.writeValue(writer,result);
       } catch (IOException e) {

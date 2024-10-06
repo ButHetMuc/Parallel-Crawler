@@ -1,9 +1,6 @@
 package com.udacity.webcrawler;
 
-import java.util.Comparator;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.PriorityQueue;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -39,7 +36,7 @@ final class WordCounts {
 //      topCounts.put(entry.getKey(), entry.getValue());
 //    }
 //    return topCounts;
-    return wordCounts.entrySet().stream()
+    return wordCounts.entrySet().stream().filter(Objects::nonNull)
             .sorted(new WordCountComparator())
             .limit(popularWordCount)
             .collect(Collectors.toMap(
